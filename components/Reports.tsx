@@ -72,6 +72,28 @@ export const Reports: React.FC<NavigationProps> = ({ onNavigate }) => {
 
     const maxChartValue = Math.max(...chartData.map(d => d.value), 1000); // Min 1000 scale
 
+    // Top Products Logic
+    const getTopProducts = () => {
+        const productMap = new Map<string, { quantity: number; total: number }>();
+
+        filteredSales.forEach(sale => {
+            sale.items.forEach(item => {
+                const existing = productMap.get(item.product) || { quantity: 0, total: 0 };
+                productMap.set(item.product, {
+                    quantity: existing.quantity + item.quantity,
+                    total: existing.total + (item.price * item.quantity)
+                });
+            });
+        });
+
+        return Array.from(productMap.entries())
+            .map(([name, data]) => ({ name, ...data }))
+            .sort((a, b) => b.total - a.total)
+            .slice(0, 3);
+    };
+
+    const topProducts = getTopProducts();
+
     return (
         <div className="bg-background-light text-slate-900 font-display min-h-screen flex flex-col">
             <header className="sticky top-0 z-50 bg-white border-b border-slate-200 p-4 flex items-center gap-4">
@@ -98,7 +120,7 @@ export const Reports: React.FC<NavigationProps> = ({ onNavigate }) => {
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                         <h3 className="text-sm font-semibold text-slate-500 mb-2">Vendas Totais</h3>
                         <p className="text-2xl font-bold text-slate-900">R$ {totalSales.toLocaleString('pt-BR', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</p>
-                        <p className="text-xs text-green-600 font-medium mt-1">{sales.length} vendas registradas</p>
+                        <p className="text-xs text-green-600 font-medium mt-1">{filteredSales.length} vendas registradas</p>
                     </div>
                     <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                         <h3 className="text-sm font-semibold text-slate-500 mb-2">Ticket Médio</h3>
@@ -134,30 +156,27 @@ export const Reports: React.FC<NavigationProps> = ({ onNavigate }) => {
                 <div className="bg-white p-4 rounded-xl shadow-sm border border-slate-100">
                     <h3 className="text-base font-bold text-slate-900 mb-4">Top Produtos</h3>
                     <div className="flex flex-col gap-4">
-                        <div className="flex items-center gap-4">
-                            <div className="size-10 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center font-bold">1</div>
-                            <div className="flex-1">
-                                <p className="font-semibold text-sm">Colchão Magnético King</p>
-                                <p className="text-xs text-slate-500">32 unidades vendidas</p>
-                            </div>
-                            <p className="font-bold text-sm">R$ 89k</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="size-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center font-bold">2</div>
-                            <div className="flex-1">
-                                <p className="font-semibold text-sm">Travesseiro NASA</p>
-                                <p className="text-xs text-slate-500">145 unidades vendidas</p>
-                            </div>
-                            <p className="font-bold text-sm">R$ 12k</p>
-                        </div>
-                        <div className="flex items-center gap-4">
-                            <div className="size-10 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center font-bold">3</div>
-                            <div className="flex-1">
-                                <p className="font-semibold text-sm">Box Baú Queen</p>
-                                <p className="text-xs text-slate-500">28 unidades vendidas</p>
-                            </div>
-                            <p className="font-bold text-sm">R$ 25k</p>
-                        </div>
+                        {topProducts.length === 0 ? (
+                            <p className="text-sm text-slate-500 text-center py-4">Nenhuma venda registrada no período.</p>
+                        ) : (
+                            topProducts.map((product, index) => (
+                                <div key={product.name} className="flex items-center gap-4">
+                                    <div className={`size-10 ${index === 0 ? 'bg-blue-100 text-blue-600' : 'bg-blue-50 text-slate-600'} rounded-lg flex items-center justify-center font-bold`}>
+                                        {index + 1}
+                                    </div>
+                                    <div className="flex-1">
+                                        <p className="font-semibold text-sm">{product.name}</p>
+                                        <p className="text-xs text-slate-500">{product.quantity} unidades vendidas</p>
+                                    </div>
+                                    <p className="font-bold text-sm">
+                                        {product.total >= 1000
+                                            ? `R$ ${(product.total / 1000).toFixed(1)}k`
+                                            : `R$ ${product.total.toLocaleString('pt-BR', { minimumFractionDigits: 0 })}`
+                                        }
+                                    </p>
+                                </div>
+                            ))
+                        )}
                     </div>
                 </div>
             </main>
