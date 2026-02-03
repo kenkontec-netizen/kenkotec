@@ -36,6 +36,7 @@ export interface Sale {
   clientAddress: string;
   items: {
     product: string;
+    productId?: string; // Added for reliable stock deduction
     size: string;
     quantity: number;
     price: number;

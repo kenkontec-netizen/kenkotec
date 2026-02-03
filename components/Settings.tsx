@@ -1,12 +1,13 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { NavigationProps, Screen } from '../types';
-
+import { useStore } from '../context/StoreContext';
 
 interface SettingsProps extends NavigationProps {
     onLogout: () => void;
 }
 
 export const Settings: React.FC<SettingsProps> = ({ onNavigate, onLogout }) => {
+    const { resetDatabase, loading } = useStore();
 
     const handleLogout = () => {
         if (confirm("Deseja realmente sair?")) {
@@ -14,6 +15,14 @@ export const Settings: React.FC<SettingsProps> = ({ onNavigate, onLogout }) => {
             onLogout();
         }
     };
+
+    const handleReset = async () => {
+        const confirmed = confirm("ATENÇÃO: Isso apagará TODOS os dados de Vendas e Clientes, e zerará o estoque. Essa ação NÃO pode ser desfeita. Tem certeza?");
+        if (confirmed) {
+            await resetDatabase();
+            alert("Dados resetados com sucesso.");
+        }
+    }
 
     return (
         <div className="bg-background-light text-slate-900 font-display min-h-screen flex flex-col">
@@ -79,6 +88,22 @@ export const Settings: React.FC<SettingsProps> = ({ onNavigate, onLogout }) => {
                             <button className="flex items-center gap-3 p-4 hover:bg-slate-50 transition-colors text-left">
                                 <span className="material-symbols-outlined text-slate-400">help</span>
                                 <span className="flex-1 font-medium text-sm">Ajuda e Suporte</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="bg-white rounded-xl shadow-sm border border-red-100 overflow-hidden">
+                        <h3 className="bg-red-50 px-4 py-2 text-xs font-bold text-red-500 uppercase tracking-wider">Zona de Perigo</h3>
+                        <div className="flex flex-col divide-y divide-red-50">
+                            <button
+                                onClick={handleReset}
+                                disabled={loading}
+                                className="flex items-center gap-3 p-4 hover:bg-red-50 transition-colors text-left group"
+                            >
+                                <span className="material-symbols-outlined text-red-400 group-hover:text-red-600">delete_forever</span>
+                                <span className="flex-1 font-medium text-sm text-red-700 group-hover:text-red-900">
+                                    {loading ? 'Processando...' : 'Zerar Banco de Dados'}
+                                </span>
                             </button>
                         </div>
                     </div>

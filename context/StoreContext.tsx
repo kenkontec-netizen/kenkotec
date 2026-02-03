@@ -6,7 +6,7 @@ export interface StoreContextType {
     inventory: Product[];
     sales: Sale[];
     customers: Customer[];
-    addToInventory: (product: Omit<Product, 'id' | 'lastUpdated'>) => Promise<void>;
+    addToInventory: (product: Omit<Product, 'id' | 'lastUpdated'>) => Promise<string | null>;
     removeFromInventory: (id: string, qty: number) => Promise<void>;
     addSale: (sale: Omit<Sale, 'id' | 'date' | 'status'>) => Promise<void>;
     addCustomer: (customer: Omit<Customer, 'id' | 'totalSpent' | 'lastPurchase'>) => Promise<void>;
@@ -15,6 +15,7 @@ export interface StoreContextType {
     selectedReceiptSale: Sale | null;
     setSelectedReceiptSale: (sale: Sale | null) => void;
     loading: boolean;
+    resetDatabase: () => Promise<void>;
 }
 
 const StoreContext = createContext<StoreContextType | undefined>(undefined);
@@ -95,7 +96,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         const { data, error } = await supabase.from('products').insert(dbProduct).select().single();
         if (error) {
             console.error('Error adding product:', error);
-            return;
+            return error.message;
         }
 
         const newProduct: Product = {
@@ -104,6 +105,7 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             costPrice: data.cost_price
         };
         setInventory(prev => [newProduct, ...prev]);
+        return null;
     };
 
     const removeFromInventory = async (id: string, qty: number) => {
@@ -205,9 +207,14 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
 
         sale.items.forEach(saleItem => {
             const productIndex = localInventoryUpdates.findIndex(p => {
+                // Priority: Match by ID
+                if (saleItem.productId && p.id === saleItem.productId) {
+                    return true;
+                }
+
+                // Fallback: Name & Category & Size heuristic
                 const nameMatch = p.name.toLowerCase().includes(saleItem.product.toLowerCase());
                 const categoryMatch = p.category.toLowerCase().includes(saleItem.product.toLowerCase());
-                // Simple size matching heuristic
                 const sizeMatch = p.size.toLowerCase().includes(saleItem.size.split(' ')[0].toLowerCase());
                 return (nameMatch || categoryMatch) && sizeMatch;
             });
@@ -297,6 +304,34 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
         }));
     };
 
+    const resetDatabase = async () => {
+        setLoading(true);
+        try {
+            // 1. Delete all Sales
+            const { error: salesError } = await supabase.from('sales').delete().neq('id', '00000000-0000-0000-0000-000000000000'); // Hack to delete all
+            if (salesError) throw salesError;
+
+            // 2. Delete all Customers
+            const { error: customersError } = await supabase.from('customers').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+            if (customersError) throw customersError;
+
+            // 3. Reset Inventory (Set quantity to 0)
+            const { error: productsError } = await supabase.from('products').update({ quantity: 0, last_updated: 'Reset' }).neq('id', '00000000-0000-0000-0000-000000000000');
+            if (productsError) throw productsError;
+
+            // Update State
+            setSales([]);
+            setCustomers([]);
+            setInventory(prev => prev.map(p => ({ ...p, quantity: 0, lastUpdated: 'Reset' })));
+
+        } catch (error) {
+            console.error("Error resetting database:", error);
+            alert("Erro ao resetar o banco de dados. Verifique o console.");
+        } finally {
+            setLoading(false);
+        }
+    };
+
     return (
         <StoreContext.Provider value={{
             inventory,
@@ -310,7 +345,8 @@ export const StoreProvider: React.FC<{ children: React.ReactNode }> = ({ childre
             updateSale,
             selectedReceiptSale,
             setSelectedReceiptSale,
-            loading
+            loading,
+            resetDatabase
         }}>
             {children}
         </StoreContext.Provider>

@@ -4,24 +4,28 @@ interface LoginProps {
     onLogin: () => void;
 }
 
+import { supabase } from '../lib/supabaseClient';
+
 export const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [loading, setLoading] = useState(false);
 
-    const handleSubmit = (e: React.FormEvent) => {
+    const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         setLoading(true);
 
-        // Simulate API call
-        setTimeout(() => {
-            if (email && password) {
-                onLogin();
-            } else {
-                alert('Por favor, preencha todos os campos.');
-            }
-            setLoading(false);
-        }, 1000);
+        const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+        });
+
+        if (error) {
+            alert(error.message);
+        } else {
+            onLogin();
+        }
+        setLoading(false);
     };
 
     return (

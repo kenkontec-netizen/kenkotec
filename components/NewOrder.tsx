@@ -16,6 +16,7 @@ export const NewOrder: React.FC<NavigationProps> = ({ onNavigate }) => {
   interface CartItem {
     id: string;
     product: string;
+    productId?: string;
     category: string;
     size: string;
     quantity: number;
@@ -50,6 +51,7 @@ export const NewOrder: React.FC<NavigationProps> = ({ onNavigate }) => {
     const newItem: CartItem = {
       id: Math.random().toString(36).substr(2, 9),
       product: selectedProductObj.name,
+      productId: selectedProductObj.id,
       category: selectedProductObj.category,
       size: selectedSize === 'other' ? 'Padrão' : selectedSize, // Simplified size for now
       quantity: quantity,
@@ -88,6 +90,7 @@ export const NewOrder: React.FC<NavigationProps> = ({ onNavigate }) => {
       clientAddress,
       items: cart.map(item => ({
         product: item.product,
+        productId: item.productId,
         size: item.size,
         quantity: item.quantity,
         price: item.price

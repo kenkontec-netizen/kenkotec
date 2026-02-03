@@ -53,27 +53,31 @@ export const Inventory: React.FC<NavigationProps> = ({ onNavigate }) => {
     }
   };
 
-  const handleSaveNewProduct = () => {
+  const handleSaveNewProduct = async () => {
     if (!newProduct.name || !newProduct.category) {
       alert('Nome e Categoria são obrigatórios.');
       return;
     }
 
-    addToInventory({
+    const error = await addToInventory({
       ...newProduct,
       image: newProduct.image || 'https://via.placeholder.com/150', // Default image
     });
 
-    setIsNewProductModalOpen(false);
-    setNewProduct({
-      name: '',
-      category: 'Colchões',
-      size: '',
-      quantity: 0,
-      price: 0,
-      ncm: '',
-      image: ''
-    });
+    if (!error) {
+      setIsNewProductModalOpen(false);
+      setNewProduct({
+        name: '',
+        category: 'Colchões',
+        size: '',
+        quantity: 0,
+        price: 0,
+        ncm: '',
+        image: ''
+      });
+    } else {
+      alert(`Erro ao cadastrar produto: ${error}`);
+    }
   };
 
   return (

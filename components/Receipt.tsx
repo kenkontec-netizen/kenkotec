@@ -78,8 +78,8 @@ export const Receipt: React.FC<NavigationProps> = ({ onNavigate }) => {
               <h1 className="text-2xl font-bold text-slate-800 uppercase tracking-tight">Kenkotec Colchões</h1>
               <p className="text-sm text-slate-500 mt-1">Soluções em Saúde e Bem-estar</p>
               <div className="mt-4 flex gap-6 text-xs text-slate-400">
-                <p>CNPJ: 00.000.000/0001-00</p>
-                <p>Tel: (00) 0000-0000</p>
+                <p>CNPJ: 43.641.378/0001-87</p>
+                <p>Tel: (61) 99688-5502</p>
               </div>
             </div>
           </div>
